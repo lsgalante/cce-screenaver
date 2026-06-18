@@ -1,6 +1,6 @@
 use wayland_client::QueueHandle;
-use clear_ui::engine::{Application, EngineState, LogicalPosition, LogicalSize, WindowSettings};
-use clear_ui::widget::{MouseButton, ElementState, MouseScrollDelta, KeyEvent, TextItem};
+use cce_ui::engine::{Application, EngineState, LogicalPosition, LogicalSize, WindowSettings};
+use cce_ui::widget::{MouseButton, ElementState, MouseScrollDelta, KeyEvent, TextItem};
 use std::time::SystemTime;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -300,5 +300,5 @@ fn main() {
     let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
     let _guard = rt.enter();
 
-    clear_ui::engine::run::<ScreensaverApp>();
+    cce_ui::engine::run::<ScreensaverApp>();
 }

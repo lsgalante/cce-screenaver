@@ -5,7 +5,7 @@ build:
 
 install: build
 	mkdir -p ~/.local/bin
-	install -m 755 target/release/cce-screenaver ~/.local/bin/cce-screenaver
+	install -m 755 ../target/release/cce-screenaver ~/.local/bin/cce-screenaver
 
 run:
 	cargo run

@@ -1,6 +1,6 @@
 use wayland_client::QueueHandle;
 use cce_ui::engine::{Application, EngineState, LogicalPosition, LogicalSize, WindowSettings};
-use cce_ui::widget::{MouseButton, ElementState, MouseScrollDelta, KeyEvent, TextItem};
+use cce_ui::widget::{MouseButton, ElementState, MouseScrollDelta, KeyEvent};
 use std::time::SystemTime;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -49,13 +49,11 @@ struct ScreensaverApp {
     style: ScreensaverStyle,
     width: u32,
     height: u32,
-    scale_factor: f64,
     lcg: Lcg,
     stars: Vec<Star>,
     matrix_columns: Vec<MatrixColumn>,
     init_cursor: Option<LogicalPosition>,
     grace_timer: f32, // 1 second grace period to prevent instant exit on startup mouse wiggle
-    text_items: Vec<TextItem>,
 }
 
 #[derive(Debug, Clone)]
@@ -113,13 +111,11 @@ impl Application for ScreensaverApp {
             style,
             width: 1920,
             height: 1080,
-            scale_factor: 1.0,
             lcg,
             stars,
             matrix_columns: Vec::new(),
             init_cursor: None,
             grace_timer: 1.0,
-            text_items: Vec::new(),
         }
     }
 
@@ -193,10 +189,13 @@ impl Application for ScreensaverApp {
         }
     }
 
-    fn view(&mut self, quads: &mut Vec<(f32, f32, f32, f32, [f32; 4])>, size: LogicalSize, scale: f64) {
+    /// Phase 6: the whole frame is one display list (background fill + the simulation quads).
+    fn display_list(&mut self, size: LogicalSize, _scale: f64) -> Option<cce_ui::scene::paint::DisplayList> {
+        use cce_ui::scene::layout::Rect;
         self.width = size.width as u32;
         self.height = size.height as u32;
-        self.scale_factor = scale;
+        let mut pc = cce_ui::scene::paint::PaintCtx::new();
+        let mut quads: Vec<(f32, f32, f32, f32, [f32; 4])> = Vec::new();
 
         // Clear screen background
         quads.push((0.0, 0.0, self.width as f32, self.height as f32, [0.0, 0.0, 0.0, 1.0]));
@@ -249,10 +248,11 @@ impl Application for ScreensaverApp {
             }
             ScreensaverStyle::Blank => {}
         }
-    }
 
-    fn text_items(&self) -> &[TextItem] {
-        &self.text_items
+        for (qx, qy, qw, qh, qc) in quads {
+            pc.quad(Rect { x: qx, y: qy, width: qw, height: qh }, qc);
+        }
+        Some(pc.finish())
     }
 
     fn handle_pointer_move(&mut self, pos: LogicalPosition, needs_rebuild: &mut bool) {

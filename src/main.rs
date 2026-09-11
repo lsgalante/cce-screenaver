@@ -3,6 +3,10 @@ use cce_ui::engine::{Application, EngineState, LogicalPosition, LogicalSize, Win
 use cce_ui::widget::{MouseButton, ElementState, MouseScrollDelta, KeyEvent};
 use std::time::SystemTime;
 
+/// How long after the screensaver appears a mouse move is ignored, so the
+/// wiggle that was already in flight does not dismiss it instantly.
+const GRACE: std::time::Duration = std::time::Duration::from_secs(1);
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum ScreensaverStyle {
     Blank,
@@ -53,7 +57,12 @@ struct ScreensaverApp {
     stars: Vec<Star>,
     matrix_columns: Vec<MatrixColumn>,
     init_cursor: Option<LogicalPosition>,
-    grace_timer: f32, // 1 second grace period to prevent instant exit on startup mouse wiggle
+    /// End of the one-second grace period that keeps the startup mouse
+    /// wiggle from dismissing the screensaver instantly. A wall clock, not a
+    /// `dt` countdown: the Blank style draws nothing and so asks for no
+    /// frames, and the runner clamps `dt` to one frame per idle wake — the
+    /// grace period outlasted a minute there.
+    grace_until: std::time::Instant,
 }
 
 #[derive(Debug, Clone)]
@@ -115,7 +124,7 @@ impl Application for ScreensaverApp {
             stars,
             matrix_columns: Vec::new(),
             init_cursor: None,
-            grace_timer: 1.0,
+            grace_until: std::time::Instant::now() + GRACE,
         }
     }
 
@@ -139,10 +148,6 @@ impl Application for ScreensaverApp {
     }
 
     fn tick(&mut self, dt: f32, needs_rebuild: &mut bool) {
-        if self.grace_timer > 0.0 {
-            self.grace_timer -= dt;
-        }
-
         match self.style {
             ScreensaverStyle::Starfield => {
                 for star in &mut self.stars {
@@ -256,7 +261,7 @@ impl Application for ScreensaverApp {
     }
 
     fn handle_pointer_move(&mut self, pos: LogicalPosition, needs_rebuild: &mut bool) {
-        if self.grace_timer > 0.0 {
+        if std::time::Instant::now() < self.grace_until {
             // Keep track of first position during grace period to measure movement distance
             if self.init_cursor.is_none() {
                 self.init_cursor = Some(pos);

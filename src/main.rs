@@ -195,6 +195,7 @@ impl Application for ScreensaverApp {
     }
 
     /// Phase 6: the whole frame is one display list (background fill + the simulation quads).
+    // style-audit: opt-out a full-bleed black surface with nothing standing on it
     fn display_list(&mut self, size: LogicalSize, _scale: f64) -> Option<cce_ui::scene::paint::DisplayList> {
         use cce_ui::scene::layout::Rect;
         self.width = size.width as u32;

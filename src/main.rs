@@ -1,5 +1,4 @@
-use wayland_client::QueueHandle;
-use cce_ui::engine::{Application, EngineState, LogicalPosition, LogicalSize, WindowSettings};
+use cce_ui::engine::{Application, LogicalPosition, LogicalSize, WindowSettings};
 use cce_ui::widget::{MouseButton, ElementState, MouseScrollDelta, KeyEvent};
 use std::time::SystemTime;
 
@@ -74,7 +73,7 @@ enum AppMessage {
 impl Application for ScreensaverApp {
     type Message = AppMessage;
 
-    fn new(_qh: &QueueHandle<EngineState<Self>>, _sender: calloop::channel::Sender<Self::Message>) -> Self {
+    fn create(_sender: cce_ui::engine::AppSender<Self::Message>) -> Self {
         let style_env = std::env::var("CCE_SCREENSAVER_STYLE").unwrap_or_default();
         let style = match style_env.to_lowercase().as_str() {
             "starfield" => ScreensaverStyle::Starfield,
